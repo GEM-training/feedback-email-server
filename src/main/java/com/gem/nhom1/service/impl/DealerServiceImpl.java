@@ -24,16 +24,14 @@ public class DealerServiceImpl implements DealerService {
     private DealerDao dealerDao;
 
     @Autowired
-    private UnitDealerDao unitDealerDao;
+    private UnitDao unitDao;
 
     @Autowired
-    private UnitDao unitDao;
+    private UnitDealerDao unitDealerDao;
 
 
     public Dealer getById(int id) {
-
-        Dealer dealer = dealerDao.getById(id);
-        return dealer;
+        return dealerDao.getById(id);
     }
 
     public List<Dealer> getList(int startIndex,int pageSize) {
@@ -52,40 +50,20 @@ public class DealerServiceImpl implements DealerService {
         dealerDao.update(dealer);
     }
 
-
-
-
-    public List<UnitDealer> getListUnitDealer(int dealerId) {
-        Dealer d = dealerDao.getById(dealerId);
-        Hibernate.initialize(d.getUnitDealers());
-
-        Set<UnitDealer> unitDealers = d.getUnitDealers();
-
-        List<UnitDealer> result = new ArrayList<UnitDealer>(unitDealers);
-
-        for(int i = 0 ; i< result.size() ; i++){
-            Hibernate.initialize(result.get(i).getUnit());
-        }
-
-        return result;
+    public List<UnitDealer> getListUnitDealer(int dealerId , int startIndex , int pageSize) {
+        return unitDealerDao.getListUnitOfDealerByDealerId(dealerId , startIndex ,pageSize);
     }
 
     public List<Inventory> getListInventory(int dealerId) {
         Dealer d = getById(dealerId);
         Hibernate.initialize(d.getInventorys());
-
-        List<Inventory> result = new ArrayList<Inventory>(d.getInventorys());
-
-        return result;
+        return new ArrayList<Inventory>(d.getInventorys());
     }
 
     public List<Staff> getListStaff(int dealerId) {
         Dealer d = getById(dealerId);
         Hibernate.initialize(d.getStaffs());
-
-        List<Staff> result = new ArrayList<Staff>(d.getStaffs());
-
-        return result;
+        return new ArrayList<Staff>(d.getStaffs());
     }
 
     public List<Bill> getListBill(int dealerId) {
@@ -94,22 +72,18 @@ public class DealerServiceImpl implements DealerService {
 
         List<Bill> result = new ArrayList<Bill>(d.getBills());
 
-        for(int i = 0 ; i< result.size() ; i++){
-            Hibernate.initialize(result.get(i).getCustomer());
-            Hibernate.initialize(result.get(i).getBillDetail());
-
-            List<BillDetail> billDetails = new ArrayList<BillDetail>(result.get(i).getBillDetail());
-            for(int j = 0 ; j< billDetails.size() ; j++){
-                BillDetail billDetail = billDetails.get(j);
+        for(Bill bill : result){
+            Hibernate.initialize(bill.getCustomer());
+            Hibernate.initialize(bill.getBillDetail());
+            List<BillDetail> billDetails = new ArrayList<BillDetail>(bill.getBillDetail());
+            for(BillDetail billDetail : billDetails)
                 Hibernate.initialize(billDetail.getUnit());
-            }
         }
 
         return result;
     }
 
     public double getPrice(int dealerId, int unitId) {
-
         UnitDealerId unitDealerId = new UnitDealerId(unitId , dealerId);
         UnitDealer unitDealer = unitDealerDao.getById(unitDealerId);
         return unitDealer.getPrice();
@@ -119,9 +93,5 @@ public class DealerServiceImpl implements DealerService {
         Dealer dealer = getById(dealerId);
         Hibernate.initialize(dealer.getPromotions());
         return new ArrayList<Promotion>(dealer.getPromotions());
-    }
-
-    public void demo(){
-        dealerDao.insertOrUpdate();
     }
 }
